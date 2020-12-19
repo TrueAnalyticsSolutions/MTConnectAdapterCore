@@ -30,19 +30,19 @@ jobs:
       run: nuget setapikey ${{ secrets.NUGET_API_KEY }} -Source "NuGet_TAMS"
      
     - name: Restore NuGet Packages
-      run: nuget restore MTConnectAdapterCore\MTConnectAdapterCore.sln
+      run: nuget restore MTConnectAdapterCore.sln
  
     - name: Build Solution DLLs
-      run: msbuild "MTConnectAdapterCore\MTConnectAdapterCore\MTConnectAdapterCore.csproj" /p:Configuration=Release
+      run: msbuild "MTConnectAdapterCore\MTConnectAdapterCore.csproj" /p:Configuration=Release
   
     - name: Upload Artifact
       uses: actions/upload-artifact@v1.0.0
       with:
         name: DLL
-        path: MTConnectAdapterCore\MTConnectAdapterCore\bin\Release
+        path: MTConnectAdapterCore\bin\Release
         
     - name: Pack DLL
-      run: nuget pack MTConnectAdapterCore\MTConnectAdapterCore\MTConnectAdapterCore.csproj -OutputDirectory "NuGet_Package" -Properties Configuration=Release
+      run: nuget pack MTConnectAdapterCore\MTConnectAdapterCore.csproj -OutputDirectory "NuGet_Package" -Properties Configuration=Release
     
     - name: Upload Artifact
       uses: actions/upload-artifact@v1.0.0
