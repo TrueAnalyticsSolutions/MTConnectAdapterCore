@@ -1,0 +1,74 @@
+name: Publish MTConnectAdapterCore
+ 
+on: 
+  push:
+    branches: 
+     - '**/develop'
+  pull_request:
+    branches: 
+     - '**/develop'
+ 
+jobs:
+  build:
+    name: Build Artifact
+    runs-on: windows-latest
+ 
+    steps:
+    - uses: actions/checkout@v1
+      name: Checkout Code
+     
+    - name: Setup MSBuild Path
+      uses: warrenbuckley/Setup-MSBuild@v1
+       
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.2
+     
+    - name: Add TAMS NuGet Server
+      run: nuget sources add -Name "NuGet_TAMS" -Source ${{ secrets.NUGET_SERVER }}
+      
+    - name: Set TAMS NuGet Server API Key
+      run: nuget setapikey ${{ secrets.NUGET_API_KEY }} -Source "NuGet_TAMS"
+     
+    - name: Restore NuGet Packages
+      run: nuget restore MTConnectAdapterCore\MTConnectAdapterCore.sln
+ 
+    - name: Build Solution DLLs
+      run: msbuild "MTConnectAdapterCore\MTConnectAdapterCore\MTConnectAdapterCore.csproj" /p:Configuration=Release
+  
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: DLL
+        path: MTConnectAdapterCore\MTConnectAdapterCore\bin\Release
+        
+    - name: Pack DLL
+      run: nuget pack MTConnectAdapterCore\MTConnectAdapterCore\MTConnectAdapterCore.csproj -OutputDirectory "NuGet_Package" -Properties Configuration=Release
+    
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+       name: nupkg
+       path: NuGet_Package
+        
+  deploy:
+   needs: build
+   name: Push NuGet Package
+   runs-on: windows-latest
+   
+   steps:
+    - name: Setup MSBuild Path
+      uses: warrenbuckley/Setup-MSBuild@v1
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.2
+      with:
+       nuget-api-key: ${{ secrets.NUGET_API_KEY }}
+       nuget-version: latest
+    
+    - name: Download Artifact
+      uses: actions/download-artifact@v1
+      with:
+       name: nupkg
+       
+    - name: Push Package
+      run: nuget push **\*.nupkg ${{ secrets.NUGET_API_KEY }} -Source ${{ secrets.NUGET_SERVER }} -SkipDuplicate
